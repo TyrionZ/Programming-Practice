@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="JavaZip:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/JavaZip_jar</output-path>
+    <root id="archive" name="JavaZip.jar">
+      <element id="module-output" name="JavaZip" />
+    </root>
+  </artifact>
+</component>
