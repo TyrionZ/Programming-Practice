@@ -19,8 +19,8 @@ public class Window extends JFrame implements MouseListener {
 
 		fileText = new JLabel("File Path: ", JLabel.RIGHT);
 		folderText = new JLabel("Folder Path: ", JLabel.RIGHT);
-		fileInput = new JTextField("please entry the file's absolute path.");
-		folderInput = new JTextField("please entry the folder's absolute path.");
+		fileInput = new JTextField("please enter the file's absolute path.");
+		folderInput = new JTextField("please enter the folder's absolute path.");
 		packButton = new JButton("Pack");
 		unpackButton = new JButton("Unpack");
 		status = new JLabel("waiting...", JLabel.CENTER);

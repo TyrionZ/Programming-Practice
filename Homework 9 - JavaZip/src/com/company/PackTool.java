@@ -43,7 +43,7 @@ public class PackTool implements Serializable {
 			creationTime = attr.creationTime().toInstant();
 
 			if (file.isDirectory()) {
-				window.status.setText("Entry " + path);
+				window.status.setText("Enter " + path);
 				isDirectory = true;
 			}
 			else {
@@ -56,7 +56,7 @@ public class PackTool implements Serializable {
 			String absolutePath = root + path;
 			File file = new File(absolutePath);
 			if (isDirectory) {
-				window.status.setText("Entry " + path);
+				window.status.setText("Enter " + path);
 				if (!file.exists()) file.mkdir();
 			}
 			else {
