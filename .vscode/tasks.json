@@ -3,7 +3,7 @@
 	// for the documentation about the tasks.json format
 	"version": "0.1.0",
 	"command": "g++",
-	"args": ["-g", "${file}", "-o", "debug", "-Wall", "-std=c++11"],
+	"args": ["-g", "${file}", "-o", "debug", "-Wall", "-std=c++14"],
 	"problemMatcher": {
         	"owner": "cpp",
         	"fileLocation": ["relative", "${workspaceRoot}"],

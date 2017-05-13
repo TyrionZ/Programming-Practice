@@ -1,0 +1,343 @@
+\documentclass[9pt,dvipsnames,table,UTF8,aspectratio=169]{beamer}
+\usepackage[no-math,cm-default]{fontspec}
+\usepackage[indentfirst]{xeCJK}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{ctex}
+\usepackage{comment}
+\usepackage{verbatim}
+\usepackage{indentfirst}
+\usepackage{syntonly}
+% 图像支持
+\usepackage{graphicx}
+\usepackage{paralist}
+\usepackage{beamerthemesplit}
+\usepackage{ulem}
+\usepackage{listings}
+\usepackage{etoolbox}
+\usepackage{zhspacing}
+
+% Font
+\usefonttheme{professionalfonts}
+\setCJKmainfont[BoldFont={SimHei},ItalicFont={KaiTi}]{SimSun}
+\setCJKsansfont{SimSun}
+\setmonofont[Scale=1]{Monaco}
+\CJKsetecglue{}
+\setbeamerfont{section in toc}{size=\fontsize{10pt}{\baselineskip}}
+
+% Theme
+\usetheme{Antibes}
+\usecolortheme{beaver}
+
+\newcommand{\hlink}[1]{
+	\footnote{\fontsize{6pt}{\baselineskip}\href{#1}{\textsl{\underline{#1}}}}
+}
+\newcommand{\graph}[2]
+{\begin{figure}[h]
+	\centering
+	\includegraphics[width=#2 \textwidth]{image/#1}
+\end{figure}}
+
+\lstset{language=C++,
+	extendedchars=false,
+	basicstyle=\ttfamily\footnotesize,
+	keywordstyle=\bfseries\color{blue},
+	identifierstyle=\color{blue!60!black},
+	commentstyle=\itshape\color{gray},
+	escapeinside=`'}
+
+
+\setlength{\parindent}{2em}
+\setlength{\baselineskip}{1.3\baselineskip}
+
+\setbeamercolor{math text}{fg=black}
+\setbeamertemplate{qed symbol}{ $ \square $ }
+\setbeamerfont{headline}{size=\fontsize{6.5pt}{\baselineskip}}
+\setbeamerfont{footline}{size=\fontsize{6.5pt}{\baselineskip}}
+\setbeamertemplate{theorems}[numbered]
+\renewcommand{\thetheorem}{\arabic{subsubsection}.\arabic{theorem}}
+\renewcommand{\thelemma}{\arabic{subsubsection}.\arabic{lemma}}
+\newenvironment{qedf}{%
+	\begin{frame}[environment=qedqedframe]%
+	}{%
+	\qed
+	\end{frame}%
+}
+\renewcommand{\appendixname}{结语}
+
+\makeatletter
+\patchcmd{\beamer@sectionintoc}{\vskip 1.5em}{\vskip 1em}{}{}
+\makeatother
+
+\begin{document}
+\AtBeginSection[] 
+{
+	\begin{frame}
+		\tableofcontents[currentsection, hideallsubsections]
+	\end{frame}
+}
+
+\AtBeginSubsection[]
+{
+	\begin{frame}[shrink]
+		\tableofcontents[sectionstyle=show/shaded, subsectionstyle=show/shaded/hide]
+	\end{frame}
+}
+
+% document info
+\title{浅析1D/1D动态规划的优化}
+\subtitle{Jiangde Doushi Pujizu Neirong}
+\author{周尚彦}
+\institute{北京大学~~信息科学技术学院}
+\date{Mar. 12$^{\text{th}}$}
+
+\maketitle
+
+\begin{frame}
+	\frametitle{Contents}
+	
+	\tableofcontents[hideallsubsections]
+\end{frame}
+
+\begin{frame}{1D/1D动态规划}
+	\begin{definition}{1D/1D动态规划}
+		状态数为$O(n)$，每一个状态的决策量为$O(n)$的动态规划方程。
+	\end{definition}
+	直接求解的时间复杂度为$O(n^2)$。但是绝大多数这样的方程通过合理的优化可以优化至$O(n\log{n})$甚至$O(n)$的时间复杂度。
+\end{frame}
+
+\section{单调队列优化}
+\begin{frame}{单调队列优化模型}
+	$$f(x) = \min_{k = b[x]}^{x - 1}\{g(k)\} + w[x]$$
+	
+	这个就是利用单调队列进行优化的经典模型。
+
+	\pause
+	注意到这样一个性质：$\forall j, k$，如果$j < k$且$g[k] \le g[j]$，那么决策$j$是毫无用处的。
+	因为根据$b[x]$单调的特性，如果$j$可以作为合法决策，那么$k$一定可以作为合法决策，又因为$k$比$j$
+	
+	所以如果把待决策表中的决策$g(i)$按照$i$排序的话，则$g(i)$必然是不降的。
+
+\end{frame}
+
+\begin{qedf}
+	所以我们可以用一个单调队列来维护决策表，对于每一个状态$f(x)$来说，计算过程分为以下几步：
+	\begin{itemize}
+		\item 队首元素出队，直到队首元素在给定的范围中$(\ge b[i])$。
+		\item 此时，队首元素就是状态$f(x)$的最优决策，计算出$f(x)$。
+		\item 计算$g(x)$，并将其插入到单调队列的尾部，同时维持队列的单调性（不断地出队，直到队列单调为止）。
+	\end{itemize}
+
+	时间复杂度为$O(n)$。
+\end{qedf}
+
+\begin{frame}{Slide\ Window}{POJ\ 2823}
+	给定一个长度为$n$的序列，依次输出从$i$开始的长度为$m$的子序列的最小值。
+
+	$n \le 10^6$。
+
+	\pause
+	显然符合上述模型，不断将数列中元素插入单调队列尾部进行维护即可。
+\end{frame}
+
+\section{单调决策性优化}
+\begin{frame}{单调决策性优化模型}
+	$$f(x) = \min_{i = 1}^{x - 1} \{f(i) + w[i, x]\}$$
+\end{frame}
+
+\begin{frame}{玩具装箱}{HNOI\ 2008}
+	有$n$个玩具需要装箱，每个玩具的长度为$c_i$，规定装箱必须按照给定顺序进行，且同一个箱子中的两个相邻玩具之间须间隔一个单位长度。
+
+	规定一个长度为$l$的箱子的费用为$(l - L)^2$，其中$L$是给定的常数，现在要求用最小的代价将所有玩具装箱。
+\end{frame}
+
+\begin{frame}
+	状态转移方程为:$$f(x) = \min{\{f(i) + w[i + 1, x]\}}$$
+
+	其中$w[i, j] = (j - i + \sum_{k = i}^{j}{c[k]} - L)^2$。
+	
+	这个模型是满足上述模型$f(x) = \min_{i = 1}^{x - 1} \{f(i) + w[i, x]\}$的。
+\end{frame}
+
+\begin{frame}
+	上述模型的优化与决策单调性相关。
+
+	令$x$的最优决策点为$k(x)$，决策单调性表述为$\forall i < j, k(i) \le k(j)$。
+
+	具有决策单调性的充要条件是$w[i, x]$满足四边形不等式。
+
+	$$w[i, x] + w[i', x'] \le w[i, x'] + w[i', x](i' < i < x < x')$$。
+
+	由于时间关系，具体数学推导过程略去。
+
+	\pause
+	在实战中如何验证$w[i, x]$符合四边形不等式？一般来说不需要验证，只需要使用暴力打出决策表观察即可。
+\end{frame}
+
+\begin{frame}
+	决策单调性优化的过程如下：
+
+	使用一个栈来维护数据，栈中元素保存一个决策作为最优决策的起始状态点，显然这些位置相互连接且依次递增。当插入一个新的决策时，从后到前扫描栈，对于每一个老决策来说，做这样两件事：
+
+	\begin{itemize}
+		\item 如果在老决策的起点处是新决策好，则退栈，抛弃老决策，将其区间合并至新决策中，继续扫描下一个决策。
+		\item 如果在老决策的起点处是老决策好，则转折点必然在这个老决策的区间中；二分查找，然后新决策进栈，结束。
+	\end{itemize}
+	
+	时间复杂度是$O(n\log{n})$。
+\end{frame}	
+
+\begin{frame}[shrink]
+	一开始，只有$f(1)$的函数值被计算出来，于是所有状态的当前最优决策都是$1$。$$1111111111111111111111111111$$
+
+	现在，显然$f(2)$的值已经确定了：它的最优决策只能是1。我们用决策2来更新决策表。由于决策单调性，我们知道新的决策表会有这样的形式：$$1111111111222222222222222222$$
+
+	使用二分法来查找“转折点”，因为如果在一个点$x$上，如果决策$2$更好，则所有比$x$大的状态都是决策$2$更好；如果$x$上决策$1$更好，则所有比$x$小的状态都是决策$1$更好。
+
+	现在决策1和决策2都已经更新完毕，则$f(3)$也已确定，现在用决策$3$来更新所有状态。根据决策单调性，现在的决策表只能有以下$2$种类型：$$1111111111222222233333333333$$ $$1111111111333333333333333333$$
+\end{frame}
+
+\section{斜率优化}
+\begin{frame}{斜率优化模型}
+	$$f(x) = \min_{i = 1}^{x - 1} \{a[x] \times f(i) + b[x] \times g(i)\}$$
+
+	其中$a[x],b[x]$是与决策无关的变量，$g(i)$可以由$f(i)$确定。
+\end{frame}
+
+\begin{frame}{土地购买}{USACO\ 2008\ Mar}
+	       有$n$块土地需要购买，每块土地都是长方形的，有特定的长与宽。你可以一次性购买一组土地，价格是这组土地中长的最大值乘以宽的最大值。
+	       
+	       比方说一块$5 \times 3$的土地和一块$2 \times 9$的土地在一起购买的价格就是$9 \times 3$。显然，怎样分组购买土地是一门学问，你的任务就是设计一种方案用最少的钱买下所有的土地。输出最小花费。(宽度记为$w[i]$，长度为$l[i]$)
+\end{frame}
+
+\begin{frame}
+	$\forall i, j$，如果$w[i] \le w[j] \& l[i] \le l[j]$那么土地$i$可以和$j$一起买下来而不产生花费。
+	
+	所以我们可以按$w$从小到大排序然后去除多余元素得到一个$l$递减的新序列。我们只需要将新序列划为若干段即可得到答案。
+
+	\pause
+	状态转移方程为$f(x) = w[x] \times l[k + 1] + f(k)$
+
+	\pause
+	可以验证该方程满足决策单调性，可以用决策单调性优化来做。
+\end{frame}
+
+\begin{frame}
+	\begin{columns}
+		\begin{column}{0.5\textwidth}
+			$$f(x) = w[x] \times l[k + 1] + f(k)$$
+
+			将其中只与$k$有关的部分看作$y$，将只与$x$有关的部分看作$b$，将既与$x$又与$k$相关的部分看作$k \times x$（其中与$x$相关的看作$k$，与$k$相关的看作$x$）
+
+			原方程就可以写成$y = kx + b$的形式：$$y(f(k)) = k(-w[x]) \times x(l[k + 1]) + b(f(x))$$
+		\end{column}
+		\begin{column}{0.5\textwidth}
+			　把每一个$k$看作平面上的一个点，在求解$f(x)$的过程中，我们要利用已知的斜率$k$来求得一个最小的截距$b$，实际上就是在平面上的线性规划：
+
+			把一条斜率确定的直线从负无穷大向上平移，碰到的平面上的第一个点就是最优决策点。
+
+			显然，所有的最有决策点都在平面的下凸壳上。
+		\end{column}
+	\end{columns}
+\end{frame}
+
+\begin{frame}
+	回顾一下求凸包的算法：
+	\begin{itemize}
+		\item 先将所有点按照$x$坐标排序。
+		\item 使用一个栈来维护当前凸包中的点，每加入一个点时将不在凸壳上的点依次弹出栈。
+	\end{itemize}
+
+	\pause
+	在动态规划过程中需要向图中动态加点，也就是需要动态维护凸壳，这显然比较困难。
+
+	\pause
+	但在这道题中加入点的$x$坐标是单调的！同时，这道题中的斜率也是单调的（确保其决策单调）！
+
+	\pause
+	所以只需要在状态转移时动态维护凸壳并在凸壳上寻找最优决策点即可。
+\end{frame}
+
+\begin{frame}{货币兑换}{NOI\ 2007}
+       现在有A、B两种金券。
+
+       对于第$i$天，A金券价格为$A[i]$元/单位，B金券价格为$B[i]$元/单位。
+       
+       买入：对于在第$i$天买入的顾客，假设顾客买入$G$元金券，将得到A、B两种金券，它们的总价值为$G$元，且满足A金券比B金券的比例正好为$Rate[i]$。
+       
+       卖出：顾客提供一个$[0,100]$的实数$P$，则将$P\%$的A金券和$P\%$的B金券以当天的价格卖出。
+       
+       现已知未来$n$天每天的$A[i],B[i],Rate[i]$，初始金钱$S$元，求$n$天之后最大获利是多少。
+\end{frame}
+
+\begin{frame}
+	一个贪心的结论是：为了获得最大获利，每次交易时应将手中的钱或金券全部进行交易。
+
+	所以任一时刻手中要不全是钱，要不全是金券。
+
+	令$f(x)$代表第$x$天结束手里全是钱的最大获利。
+
+	$$f(x) = \max{(f(x - 1), \max{\{\frac{f(i) \times Rate(i) \times A[i] + f(i) \times B[i]}{A[i] \times Rate[i] + B[i]}\}})}$$
+\end{frame}
+
+\begin{frame}
+	$$f(x) = \max{(f(x - 1), \max{\{\frac{f(i) \times Rate(i) \times A[x] + f(i) \times B[x]}{A[i] \times Rate[i] + B[i]}\}})}$$
+
+	$\max$右边的部分不难将其写成$y = kx + b$的形式。
+
+	$$\frac{f(i)}{A[i] \times Rate[i] + B[i]} = \frac{-f(i) \times Rate(i) \times A[x]}{(A[i] \times Rate[i] + B[i]) \times B[x]} + \frac{f(x)}{B[x]}$$
+
+	然而$k$和$x$都不单调。
+\end{frame}
+
+\begin{frame}{Solution\ 1}
+	使用平衡树维护凸壳。
+	
+	\pause
+	\begin{itemize}
+		\item 以$x$坐标作为关键字，维护一个从左到右斜率单调的点集
+		\item 每插入一个点时查询前驱和后继是否任满足凸性，删除至满足凸性为止。
+		\item 注意到斜率为$k$的直线第一个碰到的点$x$满足：$k_{xl} \le k \le k_{xr}$。
+	\end{itemize}
+
+	最终算法复杂度为$O(n \log{n})$。
+\end{frame}
+
+\begin{frame}{Solution\ 2}
+	分治。
+
+	\pause
+	定义过程$solve(l, r)$：使用$[l, i - 1]$中的决策点来更新$f(i)$。则目标过程是$solve(1, n)$。
+	
+	对于$solve(l, r)$，先递归$solve(l, mid)$，可以得到$f[l \dots mid]$；接着用$f[l \dots mid]$来更新$f[mid + 1 \dots r]$；然后再递归$solve(mid + 1, r)$。
+
+	\pause
+	如何用$f[l \dots mid]$来更新$f[mid + 1 \dots r]$？
+
+	可以排序预处理使得$f[mid + 1 \dots r]$按照斜率单调排序。
+
+	求凸壳的过程在递归两边结束后可以$O(n)$合并。（类似归并排序）
+
+	总复杂度为$O(n\log{n})$。
+\end{frame}
+
+\begin{frame}{Exercises}
+	\begin{itemize}
+		\item POI 2011 Lightning Conductor
+		\item ZJOI 2007 仓库建设
+		\item POJ 1180 Batch Scheduling
+		\item APIO 2010 特别行动队
+		\item APIO 2014 序列分割
+		\item ICPC World Final 2011 F Machine Works
+	\end{itemize}
+\end{frame}
+\appendix
+\section{}
+\begin{frame}{Fin.}
+	The end.
+
+	Thanks.
+\end{frame}
+
+\end{document}
