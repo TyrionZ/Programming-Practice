@@ -137,7 +137,6 @@ public:
 
 namespace Check
 {
-	bool setable[MAPHEIGHT + 2][MAPWIDTH + 2], getable[MAPHEIGHT + 2][MAPWIDTH + 2];
 	vector<pair<int, int> >landablePoint;
 	int borderBlock[7][4][4];
 	//0: 上 1：下 2：左 3：右
@@ -165,45 +164,101 @@ namespace Check
 		}
 		return true;
 	}
-	//只考虑平移
+
+}
+
+// //只考虑平移
+// namespace Check
+// {
+// 	bool setable[MAPHEIGHT + 2][MAPWIDTH + 2], getable[MAPHEIGHT + 2][MAPWIDTH + 2];
+// 	//0: 上 1：下 2：左 3：右
+// 	vector<pair<int, int> >* getLandablePoint(int blockType, int orientation, const int **grid)
+// 	{
+// 		memset(setable, 0, sizeof(setable));
+// 		memset(getable, 0, sizeof(getable));
+// 		landablePoint.clear();
+// 		int* border = borderBlock[blockType][orientation];
+// 		int top = MAPHEIGHT - border[0], bot = 1 - border[1];
+// 		//printf("%d %d\n", top, bot);
+// 		for (int y = top; y >= bot; y--)
+// 		{
+// 			int l = 1 - border[2], r = MAPWIDTH - border[3];
+// 			//printf("%d %d\n", l, r);
+// 			for (int x = l; x <= r; x++)
+// 				if (Setable(blockType, orientation, x, y, grid))
+// 				{
+// 					setable[y][x] = 1;
+// 					if (y == top || getable[y + 1][x]) getable[y][x] = 1;
+// 				}
+// 			for (int x = l; x < r; x++)
+// 				if (getable[y][x] && setable[y][x + 1]) getable[y][x + 1] = 1;
+// 			for (int x = r; x > l; x--)
+// 				if (getable[y][x] && setable[y][x - 1]) getable[y][x - 1] = 1;
+// 		}
+// 		for (int y = top; y >= bot; y--)
+// 		{
+// 			int l = 1 - border[2], r = MAPWIDTH - border[3];
+// 			for (int x = l; x <= r; x++)
+// 				if (getable[y][x] && !getable[y - 1][x]) landablePoint.push_back(make_pair(x, y));
+// 		}
+// 		return &landablePoint;
+// 	}
+// }
+//考虑平移和旋转
+namespace Check
+{
+	bool setable[MAPHEIGHT + 2][MAPWIDTH + 2][4], getable[MAPHEIGHT + 2][MAPWIDTH + 2][4], vis[MAPHEIGHT + 2][MAPWIDTH + 2][4];
+	void dfs(int x, int y, int o)
+	{
+		if (x < 1 || x > MAPWIDTH || y < 1 || y > MAPHEIGHT) return;
+		if (vis[y][x][o] || !setable[y][x][o]) return;
+		vis[y][x][o] = 1; getable[y][x][o] = 1;
+		dfs(x, y - 1, o); dfs(x + 1, y, o); dfs(x - 1, y, o);
+		int _o = o + 1; if (_o == 4) _o = 0;
+		dfs(x, y, _o);
+	}
 	vector<pair<int, int> >* getLandablePoint(int blockType, int orientation, const int **grid)
 	{
-		// printf("*****%d %d\n", blockType, orientation);
-		// for (int i = MAPHEIGHT + 1; i >= 0; --i) {
-		// 	for (int j = 0; j < MAPWIDTH + 2; ++j)
-		// 		printf("%d", grid[i][j]);
-		// 	printf("\n");
-		// }
+		//cout << blockType << ' ' << orientation << endl;
 		memset(setable, 0, sizeof(setable));
 		memset(getable, 0, sizeof(getable));
+		memset(vis, 0, sizeof(vis));
 		landablePoint.clear();
-		int* border = borderBlock[blockType][orientation];
-		int top = MAPHEIGHT - border[0], bot = 1 - border[1];
-		//printf("%d %d\n", top, bot);
-		for (int y = top; y >= bot; y--)
-		{
-			int l = 1 - border[2], r = MAPWIDTH - border[3];
-			//printf("%d %d\n", l, r);
-			for (int x = l; x <= r; x++)
-				if (Setable(blockType, orientation, x, y, grid))
+		for (int y = MAPHEIGHT; y >= 1; y--)
+			for (int x = 1; x <= MAPWIDTH; x++)
+				for (int o = 0; o < 4; o++)
+				if (Setable(blockType, o, x, y, grid))
 				{
-					setable[y][x] = 1;
-					if (y == top || getable[y + 1][x]) getable[y][x] = 1;
+					setable[y][x][o] = 1;
+					if (y + borderBlock[blockType][o][0] == MAPHEIGHT)
+						getable[y][x][o] = 1;
 				}
-			for (int x = l; x < r; x++)
-				if (getable[y][x] && setable[y][x + 1]) getable[y][x + 1] = 1;
-			for (int x = r; x > l; x--)
-				if (getable[y][x] && setable[y][x - 1]) getable[y][x - 1] = 1;
-		}
-		for (int y = top; y >= bot; y--)
-		{
-			int l = 1 - border[2], r = MAPWIDTH - border[3];
-			for (int x = l; x <= r; x++)
-				if (getable[y][x] && !getable[y - 1][x]) landablePoint.push_back(make_pair(x, y));
-		}
+		for (int y = MAPHEIGHT; y >= 1; y--)
+			for (int x = 1; x <= MAPWIDTH; x++)
+				for (int o = 0; o < 4; o++)
+					if (!vis[y][x][o] && getable[y][x][o])
+						dfs(x, y, o);
+		// for (int y = MAPHEIGHT; y >= 1; y--)
+		// {
+		// 	for (int x = 1; x <= MAPWIDTH; x++) cout << setable[y][x][orientation];
+		// 		cout << endl;
+		// }			
+		// cout << "_____" << endl;
+		// for (int y = MAPHEIGHT; y >= 1; y--)
+		// {
+		// 	for (int x = 1; x <= MAPWIDTH; x++) cout << getable[y][x][orientation];
+		// 		cout << endl;
+		// }
+		for (int y = MAPHEIGHT; y >= 1; y--)
+			for (int x = 1; x <= MAPWIDTH; x++)
+				{
+					if (getable[y][x][orientation] && !getable[y - 1][x][orientation])
+						landablePoint.push_back(make_pair(x, y));
+				}
 		return &landablePoint;
 	}
-};
+}
+
 namespace evaluate {
 	const double landingHeight = -4.400158825082766;
 	const double rowsEliminated = 3.4181268101392694;
@@ -270,7 +325,7 @@ namespace evaluate {
 				res += (rowHoles >> j) & 1;
 		}
 		return res;
-	}
+	} //??
 
 	double getWellSums() {
 		double res = 0;
@@ -284,7 +339,7 @@ namespace evaluate {
 					res += count * (count - 1) / 2;
 				}
 		return res;
-	}
+	} //??
 
 	double evaluate(Tetris landBlock, const int **initGrid) {
 		memset(grid, 0, sizeof grid);
@@ -533,6 +588,7 @@ int main()
 {
 #ifndef _BOTZONE_ONLINE
 	freopen("input.txt", "r", stdin);
+	freopen("output.txt", "w", stdout);
 #endif
 	// 加速输入
 	istream::sync_with_stdio(false);
