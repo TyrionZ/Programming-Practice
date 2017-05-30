@@ -1,5 +1,18 @@
 {
 	"files.associations": {
-		"cstring": "cpp"
+		"*.m": "matlab",
+		"cstring": "cpp",
+		"vector": "cpp",
+		"utility": "cpp",
+		"iostream": "cpp",
+		"algorithm": "cpp",
+		"deque": "cpp",
+		"xstring": "cpp",
+		"initializer_list": "cpp",
+		"queue": "cpp",
+		"stack": "cpp",
+		"type_traits": "cpp",
+		"xtree": "cpp",
+		"xutility": "cpp"
 	}
 }

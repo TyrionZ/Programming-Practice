@@ -1,9 +1,3 @@
-/*
-unsolved:
-1.Check返回空vector的情况
-2.对于Check返回空vector的情况的处理
-*/
-
 /**
 * Tetris 简单交互样例程序
 * https://wiki.botzone.org/index.php?title=Tetris
@@ -13,13 +7,13 @@ unsolved:
 // 注意：x的范围是1~MAPWIDTH，y的范围是1~MAPHEIGHT
 // 数组是先行（y）后列（c）
 // 坐标系：原点在左下角
-
+ 
 #include <iostream>
-#include <string>
-#include <cmath>
+#include <string.h>
+#include <math.h>
 #include <algorithm>
-#include <cstdlib>
-#include <ctime>
+#include <stdlib.h>
+#include <time.h> 
 #include <vector>
 #include <cstring>
 #include <cstdio>
@@ -27,7 +21,7 @@ using namespace std;
 
 #define MAPWIDTH 10
 #define MAPHEIGHT 20
-
+#define INF 1e9
 const int blockShape[7][4][8] = {
 	{ { 0,0,1,0,-1,0,-1,-1 },{ 0,0,0,1,0,-1,1,-1 },{ 0,0,-1,0,1,0,1,1 },{ 0,0,0,-1,0,1,-1,1 } },
 	{ { 0,0,-1,0,1,0,1,-1 },{ 0,0,0,-1,0,1,1,1 },{ 0,0,1,0,-1,0,-1,1 },{ 0,0,0,1,0,-1,-1,-1 } },
@@ -137,7 +131,7 @@ public:
 
 namespace Check
 {
-	vector<pair<int, int> >landablePoint;
+	vector<pair<pair<int, int>, int> >landablePoint;
 	int borderBlock[7][4][4];
 	//0: 上 1：下 2：左 3：右
 	void init()
@@ -166,45 +160,6 @@ namespace Check
 	}
 
 }
-
-// //只考虑平移
-// namespace Check
-// {
-// 	bool setable[MAPHEIGHT + 2][MAPWIDTH + 2], getable[MAPHEIGHT + 2][MAPWIDTH + 2];
-// 	//0: 上 1：下 2：左 3：右
-// 	vector<pair<int, int> >* getLandablePoint(int blockType, int orientation, const int **grid)
-// 	{
-// 		memset(setable, 0, sizeof(setable));
-// 		memset(getable, 0, sizeof(getable));
-// 		landablePoint.clear();
-// 		int* border = borderBlock[blockType][orientation];
-// 		int top = MAPHEIGHT - border[0], bot = 1 - border[1];
-// 		//printf("%d %d\n", top, bot);
-// 		for (int y = top; y >= bot; y--)
-// 		{
-// 			int l = 1 - border[2], r = MAPWIDTH - border[3];
-// 			//printf("%d %d\n", l, r);
-// 			for (int x = l; x <= r; x++)
-// 				if (Setable(blockType, orientation, x, y, grid))
-// 				{
-// 					setable[y][x] = 1;
-// 					if (y == top || getable[y + 1][x]) getable[y][x] = 1;
-// 				}
-// 			for (int x = l; x < r; x++)
-// 				if (getable[y][x] && setable[y][x + 1]) getable[y][x + 1] = 1;
-// 			for (int x = r; x > l; x--)
-// 				if (getable[y][x] && setable[y][x - 1]) getable[y][x - 1] = 1;
-// 		}
-// 		for (int y = top; y >= bot; y--)
-// 		{
-// 			int l = 1 - border[2], r = MAPWIDTH - border[3];
-// 			for (int x = l; x <= r; x++)
-// 				if (getable[y][x] && !getable[y - 1][x]) landablePoint.push_back(make_pair(x, y));
-// 		}
-// 		return &landablePoint;
-// 	}
-// }
-//考虑平移和旋转
 namespace Check
 {
 	bool setable[MAPHEIGHT + 2][MAPWIDTH + 2][4], getable[MAPHEIGHT + 2][MAPWIDTH + 2][4], vis[MAPHEIGHT + 2][MAPWIDTH + 2][4];
@@ -217,7 +172,7 @@ namespace Check
 		int _o = o + 1; if (_o == 4) _o = 0;
 		dfs(x, y, _o);
 	}
-	vector<pair<int, int> >* getLandablePoint(int blockType, int orientation, const int **grid)
+	vector<pair<pair<int, int>, int> >* getLandablePoint(int blockType, const int **grid)
 	{
 		//cout << blockType << ' ' << orientation << endl;
 		memset(setable, 0, sizeof(setable));
@@ -227,12 +182,12 @@ namespace Check
 		for (int y = MAPHEIGHT; y >= 1; y--)
 			for (int x = 1; x <= MAPWIDTH; x++)
 				for (int o = 0; o < 4; o++)
-				if (Setable(blockType, o, x, y, grid))
-				{
-					setable[y][x][o] = 1;
-					if (y + borderBlock[blockType][o][0] == MAPHEIGHT)
-						getable[y][x][o] = 1;
-				}
+					if (Setable(blockType, o, x, y, grid))
+					{
+						setable[y][x][o] = 1;
+						if (y + borderBlock[blockType][o][0] == MAPHEIGHT)
+							getable[y][x][o] = 1;
+					}
 		for (int y = MAPHEIGHT; y >= 1; y--)
 			for (int x = 1; x <= MAPWIDTH; x++)
 				for (int o = 0; o < 4; o++)
@@ -251,9 +206,10 @@ namespace Check
 		// }
 		for (int y = MAPHEIGHT; y >= 1; y--)
 			for (int x = 1; x <= MAPWIDTH; x++)
+				for (int o = 0; o < 4; o++)
 				{
-					if (getable[y][x][orientation] && !getable[y - 1][x][orientation])
-						landablePoint.push_back(make_pair(x, y));
+					if (getable[y][x][o] && !getable[y - 1][x][o])
+						landablePoint.push_back(make_pair(make_pair(x, y), o));
 				}
 		return &landablePoint;
 	}
@@ -264,7 +220,7 @@ namespace evaluate {
 	const double rowsEliminated = 3.4181268101392694;
 	const double rowsTransitions = -3.2178882868487753;
 	const double columnTransitions = -9.348695305445199;
-	const double holesNumber = -7.899265427351652;
+	const double holesNumber = -20.899265427351652;
 	const double wellSums = -3.3855972247263626;
 
 	int grid[MAPHEIGHT + 2][MAPWIDTH + 2];
@@ -295,10 +251,9 @@ namespace evaluate {
 	double getRowTransitions(int x) {
 		double res = 0;
 		for (int i = 0; i <= MAPWIDTH; i++)
-			res += (grid[x][i] != grid[x][i + 1]);
+			res += ((i && i != MAPWIDTH) ? 1.0 : 0.4) * (grid[x][i] != grid[x][i + 1] ? 1.0 : 0.0);
 		return res;
 	}
-
 	double getColumnTransitions(int x) {
 		double res = 0;
 		for (int i = 0; i <= MAPHEIGHT - 1; i++)
@@ -318,11 +273,14 @@ namespace evaluate {
 		int rowHoles = 0;
 		int previousRow = getStatus(MAPHEIGHT);
 
-		for (int i = MAPHEIGHT - 1; i >= 1; i--) {
-			rowHoles = ~(getStatus(i)) & (previousRow | rowHoles);
+		for (int i = MAPHEIGHT; i >= 0; i--) {
+			int currentRow = getStatus(i);
+			rowHoles = (~currentRow) & (previousRow | rowHoles);
 
-			for (int j = 1; j <= MAPWIDTH; j++)
+			for (int j = 0; j < MAPWIDTH; j++)
 				res += (rowHoles >> j) & 1;
+			
+			previousRow = currentRow;
 		}
 		return res;
 	} //??
@@ -332,8 +290,8 @@ namespace evaluate {
 		for (int j = 1; j <= MAPWIDTH; ++j)
 			for (int i = MAPHEIGHT; i >= 1; --i)
 				if (grid[i][j - 1] && grid[i][j + 1] && !grid[i][j]) {
-					int count = 1;
-					while (grid[i][j - 1] && grid[i][j + 1] && !grid[i][j])
+					int count = 0;
+					while (!grid[i][j])
 						--i, count++;
 					++i;
 					res += count * (count - 1) / 2;
@@ -354,17 +312,26 @@ namespace evaluate {
 
 		double res = 0;
 		int er = Eliminate(landBlock);
-		res += landingHeight * (landBlock.blockY - er);
 		int mahai = 0;
 		for (int i = 0; i < 4; i++)
 			mahai = max(mahai, blockShape[landBlock.blockType][landBlock.orientation][i << 1]);
-		mahai = (MAPHEIGHT - mahai - (landBlock.blockY - er));
-		res += landingHeight * (1 / (double(mahai) * mahai / 9));
-		res += rowsEliminated * (1.0 + (1 / (double(mahai) * mahai / 9))) * er;
+
+		if (landBlock.blockX == 6 && landBlock.blockY == 8)
+			int  o = 1;
+
+		mahai = mahai + (landBlock.blockY - er);
+		res += landingHeight * mahai;
+		for (int i = 1; i <= MAPHEIGHT; i++)
+			for (int j = 1; j <= MAPWIDTH; j++)
+				if (grid[i][j]) mahai = max(i, mahai);
+		res += landingHeight * (1 / (double(mahai) * mahai / 9 + 0.01));
+		res += rowsEliminated * (1.0 + (1 / (double(mahai) * mahai / 9 + 0.01))) * er;
 		for (int i = 1; i <= MAPHEIGHT; i++)
 			res += rowsTransitions * getRowTransitions(i);
 		for (int i = 1; i <= MAPWIDTH; i++)
 			res += columnTransitions * getColumnTransitions(i);
+
+		
 		res += wellSums * getWellSums();
 		res += holesNumber * getHolesNumber();
 		return res;
@@ -557,8 +524,8 @@ namespace Util
 			"[]",
 			"##"
 		};
-		cout << "~~：墙，[]：块，##：新块" << endl;
-		for (int y = MAPHEIGHT + 1; y >= 0; y--)
+//		cout << "~~：墙，[]：块，##：新块" << endl;
+		for (int y = MAPHEIGHT + 1; y >= 0; --y)
 		{
 			for (int x = 0; x <= MAPWIDTH + 1; x++)
 				cout << i2s[gridInfo[0][y][x] + 2];
@@ -584,12 +551,119 @@ void mydl(int **s, int r1) {
 		delete[] s[i];
 	delete[] s;
 }
+void xiaohang(int col) {
+	int gg[MAPHEIGHT + 2];
+	for (int i = MAPHEIGHT; i >= 1; --i) {
+		if (i == MAPHEIGHT) 
+			gg[i] = i;
+		else 
+			gg[i] = gg[i + 1] - 1;
+
+		bool xiao = true;
+		for (int j = 1; j <= MAPWIDTH; ++j)
+			if (gridInfo[col][i][j] != 1)
+				xiao = false;
+		if (xiao == true)
+			--gg[i];
+	}
+	if (gg[1] > 0) {
+		for (int i = MAPHEIGHT; i >= 1; --i)
+			for (int j = 1; j <= MAPWIDTH; ++j)
+				gridInfo[col][i][j] = gridInfo[col][gg[i]][j];
+	}
+	else {
+		for (int i = 1; i <= MAPHEIGHT; ++i)
+			for (int j = 1; j <= MAPWIDTH; ++j)
+				gridInfo[col][i][j] = 0;
+	}
+}
+pair<Tetris, double> getBest(const int *colnum, int blockType, int depth) {
+	int **gridinfo = mymk(MAPHEIGHT + 2, MAPWIDTH + 2);
+	int **ssp = mymk(MAPHEIGHT + 2, MAPWIDTH + 2);
+	for (int i = 0; i < MAPHEIGHT + 2; ++i)
+		for (int j = 0; j < MAPWIDTH + 2; ++j)
+			ssp[i][j] = gridinfo[i][j] = gridInfo[currBotColor][i][j];
+	int tcfk[10];
+	memcpy(tcfk, colnum, sizeof(int)*8);
+
+	int blockForEnemy, finalX, finalY, finalO;
+	//先创建二维指针
+	//-------------------------------------------------------------------------------------------------
+	double maxval = -INF;
+	Check::init(); //Check使用前要初始化一下
+
+		//获取我方棋盘的新方块的可到达位置
+	vector<pair<pair<int, int>, int>> sb = (*Check::getLandablePoint(blockType, (const int **)ssp));
+		//		cout << (*sb).size() << endl;
+
+	for (int si = 0; si < sb.size(); ++si) {
+		pair<pair<int, int>, int> p = sb[si];
+//		if (p.first.first == 10 && p.first.second == 2 &&  p.second == 3 && depth == 2)
+//			int o = 1;
+		double val = evaluate::evaluate(Tetris(blockType, currBotColor).set(p.first.first, p.first.second, p.second), (const int **)ssp);
+		if (depth > 1) {
+			#ifndef _BOTZONE_ONLINE
+			printf("%d %d %d\n", p.first.first, p.first.second, p.second);		
+			#endif
+			
+			for (int ssi = 0; ssi < MAPHEIGHT + 2; ++ssi)
+				for (int ssj = 0; ssj < MAPWIDTH + 2; ++ssj)
+					gridInfo[currBotColor][ssi][ssj] = gridinfo[ssi][ssj];
+			Tetris shit(blockType, currBotColor);
+			shit.set(p.first.first, p.first.second, p.second);
+			shit.place();
+			for (int ssi = 0; ssi < MAPHEIGHT + 2; ++ssi)
+				for (int ssj = 0; ssj < MAPWIDTH + 2; ++ssj)
+					if (gridInfo[currBotColor][ssi][ssj] == 2)
+						gridInfo[currBotColor][ssi][ssj] = 1;
+			xiaohang(currBotColor);
+
+			double mval = INF;
+			for (int gi = 0; gi < 7; ++gi) {
+				tcfk[gi]++;
+				bool canUse = true;
+				for (int u = 0; u < 7; ++u)
+					for (int v = 0; v < 7; ++v)
+						if (tcfk[u] - tcfk[v] > 2)
+							canUse = false;
+				if (canUse) {
+					pair<Tetris, double> hhd = getBest(tcfk, gi, depth-1);
+					double rc = hhd.second;
+					if (mval > rc) {
+						mval = rc;
+					}
+				}
+				tcfk[gi]--;
+			}
+			//cout << mval << endl;
+			val = val * 0.7 + mval * 0.3;
+		}
+
+		//			cout << val << endl;
+		if (val > maxval) {
+			maxval = val;
+			finalX = p.first.first;
+			finalY = p.first.second;
+			finalO = p.second;
+		}
+
+		
+	}
+
+	for (int i = 0; i < MAPHEIGHT + 2; ++i)
+		for (int j = 0; j < MAPWIDTH + 2; ++j)
+			gridInfo[currBotColor][i][j] = gridinfo[i][j];
+
+	mydl(gridinfo, MAPHEIGHT+2);
+	return pair<Tetris, double>(Tetris(blockType, currBotColor).set(finalX,finalY,finalO), (maxval>-INF/2) ? maxval : maxval/2);
+}
 int main()
 {
 #ifndef _BOTZONE_ONLINE
 	freopen("input.txt", "r", stdin);
 	freopen("output.txt", "w", stdout);
 #endif
+
 	// 加速输入
 	istream::sync_with_stdio(false);
 	srand(time(NULL));
@@ -662,33 +736,12 @@ int main()
 	//先创建二维指针
 	int **ssp = mymk(MAPHEIGHT + 2, MAPWIDTH + 2);
 
+	Tetris hhd = getBest(typeCountForColor[currBotColor], blockType, 2).first;
+	finalX = hhd.blockX;
+	finalY = hhd.blockY;
+	finalO = hhd.orientation;
 	//-------------------------------------------------------------------------------------------------
-	double maxval = -INFINITY;
-	Check::init(); //Check使用前要初始化一下
-
-	for (int i = 0; i < MAPHEIGHT + 2; ++i)
-		for (int j = 0; j < MAPWIDTH + 2; ++j)
-			ssp[i][j] = gridInfo[currBotColor][i][j];
-	for (int i = 0; i < 4; ++i) {
-		//获取我方棋盘的新方块的可到达位置
-		vector<pair<int, int> > *sb = Check::getLandablePoint(blockType, i, (const int **)ssp);
-//		cout << (*sb).size() << endl;
-
-		for (int si = 0; si < sb->size(); ++si) {
-			pair<int, int> p = (*sb)[si];
-
-
-			double val = evaluate::evaluate(Tetris(blockType, currBotColor).set(p.first, p.second, i), (const int **)ssp);
-//			cout << val << endl;
-			if (val > maxval) {
-				maxval = val;
-				finalX = p.first;
-				finalY = p.second;
-				finalO = i;
-			}
-		}
-	}
-
+	
 	//-------------------------------------------------------------------------------------------------
 
 	//// 贪心决策
@@ -731,23 +784,23 @@ determined:
 			continue;
 
 
-		maxval = -INFINITY;
+		double maxval = -INFINITY;
 		int finalXX, finalYY, finalOO;
-		for (int i = 0; i < 4; ++i) {
+
 			//同我方策略求敌方最优策略
 
-			vector<pair<int, int> > *sb = Check::getLandablePoint(btfe, i, (const int **)ssp);
+			vector<pair<pair<int, int>, int> > *sb = Check::getLandablePoint(btfe, (const int **)ssp);
 			for (auto p : *sb) {
-				double val = evaluate::evaluate(Tetris(btfe, enemyColor).set(p.first, p.second, i), (const int **)ssp);
+				double val = evaluate::evaluate(Tetris(btfe, enemyColor).set(p.first.first, p.first.second, p.second), (const int **)ssp);
 //				cout << val << endl;
 				if (val > maxval) {
 					maxval = val;
-					finalXX = p.first;
-					finalYY = p.second;
-					finalOO = i;
+					finalXX = p.first.first;
+					finalYY = p.first.second;
+					finalOO = p.second;
 				}
 			}
-		}
+
 //		cout << "--std--" << btfe << ":::" << maxval << endl;
 		if (maxval < minval) {
 			minval = maxval;
@@ -781,8 +834,12 @@ determined:
 
 	// 决策结束，输出结果（你只需修改以上部分）
 
-	cout << blockForEnemy << " " << finalX << " " << finalY << " " << finalO;
+	std::cout << blockForEnemy << " " << finalX << " " << finalY << " " << finalO;
 
+	Tetris myBlock(blockType, currBotColor);
+	myBlock.set(finalX, finalY, finalO).place();
+//	myBlock.set(9, 2, 0).place();
+	Util::printField();
 //	while (1);
 	return 0;
 }
