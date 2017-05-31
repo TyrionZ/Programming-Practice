@@ -141,6 +141,22 @@
 	显然符合上述模型，不断将数列中元素插入单调队列尾部进行维护即可。
 \end{frame}
 
+\begin{frame}{Lightning Conductor}{Poi 2011}
+	已知一个长度为$n$的序列$a_1, \dots, a_n$。
+
+	对于每个$1 \le i \le n$，找到最小的非负整数$p$满足对于任意的$j, a_j \le a_i + p - \sqrt{|i - j|}$。
+\end{frame}
+
+\begin{qedf}
+	令$$f(x) = \max_{k = 1}^{x - 1} \{a_k + \sqrt{x - k}\} $$ $$ g(x) = \max_{k = x + 1}^{n} \{a_k + \sqrt{k - x}\}$$
+
+	则$$p_x = \max(f(x), g(x)) - a[x]$$ \pause
+
+	看起来并不符合模型。
+
+	但由于$\sqrt{x} - \sqrt{x - 1}$单调递减，所以$f(x), g(x)$仍然具有模型的性质。
+\end{qedf}
+
 \section{单调决策性优化}
 \begin{frame}{单调决策性优化模型}
 	$$f(x) = \min_{i = 1}^{x - 1} \{f(i) + w[i, x]\}$$
@@ -169,7 +185,7 @@
 
 	$$w[i, x] + w[i', x'] \le w[i, x'] + w[i', x](i' < i < x < x')$$。
 
-	由于时间关系，具体数学推导过程略去。
+	由于时间关系，详细的数学推导过程略去。
 
 	\pause
 	在实战中如何验证$w[i, x]$符合四边形不等式？一般来说不需要验证，只需要使用暴力打出决策表观察即可。
@@ -324,7 +340,6 @@
 
 \begin{frame}{Exercises}
 	\begin{itemize}
-		\item POI 2011 Lightning Conductor
 		\item ZJOI 2007 仓库建设
 		\item POJ 1180 Batch Scheduling
 		\item APIO 2010 特别行动队
